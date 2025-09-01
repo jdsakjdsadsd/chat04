@@ -1,13 +1,21 @@
 import mongoose from 'mongoose';
 
 const sessaoChatSchema = new mongoose.Schema({
-    sessionId: String,
-    botId: String,
-    startTime: Date,
-    endTime: Date,
-    messages: Array,
+  sessionId: String,
+  botId: String,
+  startTime: Date,
+  endTime: Date,
+  messages: Array,
+
+  // 👇 Novo campo para permitir título inteligente
+  titulo: {
+    type: String,
+    default: "Conversa Sem Título",
+    trim: true
+  }
+
 }, { 
-    strict: false 
+  strict: false 
 });
 
 // IMPORTANTE: Verifique no seu MongoDB Atlas se o nome da sua coleção é 'sessoesChat'.

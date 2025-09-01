@@ -27,33 +27,27 @@ async function connectDB() {
 // Conecta ao iniciar
 connectDB();
 
-
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
 // =================================================================
-//           ADICIONE A NOVA ROTA GET PARA BUSCAR HISTÓRICOS AQUI
+//           ROTA GET PARA BUSCAR HISTÓRICOS
 // =================================================================
 app.get('/api/chat/historicos', async (req, res) => {
   try {
-    // 1. Verificação de segurança para garantir que o banco de dados está conectado.
     if (!db) {
       return res.status(500).json({ error: "Conexão com o banco de dados não estabelecida." });
     }
 
-    // 2. Pegue a coleção. Verifique no seu Atlas se o nome é "sessoesChat" ou outro.
     const collection = db.collection("sessoesChat"); 
 
-    // 3. Busque os documentos, ordene pelos mais recentes e limite a 20.
-    //    O .toArray() é necessário no driver nativo.
     const historicos = await collection.find({})
-                                      .sort({ startTime: -1 }) // -1 para ordem decrescente
+                                      .sort({ startTime: -1 })
                                       .limit(20)
                                       .toArray();
     
-    // 4. Envie os dados encontrados como resposta.
     res.json(historicos);
 
   } catch (error) {
@@ -62,9 +56,8 @@ app.get('/api/chat/historicos', async (req, res) => {
   }
 });
 // =================================================================
-//           FIM DA NOVA ROTA
+//           FIM DA ROTA HISTÓRICOS
 // =================================================================
-
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -73,9 +66,6 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
-
-// ... O RESTO DO SEU CÓDIGO CONTINUA EXATAMENTE IGUAL ...
-// (functions, getCurrentTime, app.post('/chat', ...), etc.)
 
 const functions = [
   {
@@ -108,8 +98,17 @@ app.post('/chat', async (req, res) => {
     }
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash", // Recomendo usar 1.5-flash que é mais recente
-      // functions, // A API do gemini-1.5-flash mudou, 'functions' agora é 'tools'
+      model: "gemini-1.5-flash",
+      systemInstruction: {
+        parts: [
+          { text: `
+            Você é o TopizioBot, um personal stylist que entende tudo sobre moda, tendencias e as novas coleçoes de marcas de grife e Alta-costura.
+            Sempre responda de forma educada, clara e em português do Brasil.
+            Se perguntarem sobre você, diga que foi desenvolvido em Node.js, Express e usa a API Gemini do Google por Natã Emanuel do 3º ano de Informática.
+            Seja simpático, evite respostas muito longas, e sempre tente ajudar de forma objetiva.
+          ` }
+        ]
+      },
       safetySettings: [
         { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
         { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
@@ -125,7 +124,7 @@ app.post('/chat', async (req, res) => {
 
     console.log("Enviando mensagem para o Gemini:", message);
 
-    const result = await chat.sendMessage(message); // Simplificado para o gemini-1.5-flash
+    const result = await chat.sendMessage(message);
 
     const geminiResponse = result.response;
     const text = geminiResponse.text();
